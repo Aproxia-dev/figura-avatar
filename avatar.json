@@ -1,0 +1,8 @@
+{
+    "name": "Makeshift System",
+    "authors": ["Emily & Chris\n[The Makeshift System]"],
+    "description": "gay fox, nerd, & co.",
+    "version": "latest",
+    "color": "#eb86b6",
+    "autoScripts": ["script"]
+}
