@@ -1,15 +1,17 @@
 return function()
 	nameplate.ENTITY:setPos(0, 0.3, 0)
+	animations["emily.constant.ears"].witch:play()
 
 	toggleables["Bunny"] = models.emily.witch.Body.Bunny
 
   disableOnSwitch = {
     models.emily.witch.Body.booba,
-		models.emily.witch.Body.Bunny,
+	  models.emily.witch.Body.Bunny,
   }
 
   swOut = function()
-	  vanilla_model.HELMET:setVisible(true)
+	vanilla_model.HELMET:setVisible(true)
+	animations["emily.constant.ears"].witch:stop()
   end
     
 

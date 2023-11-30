@@ -1,27 +1,28 @@
-vanilla_model.INNER_LAYER:setVisible(false)
-vanilla_model.OUTER_LAYER:setVisible(false)  
+vanilla_model.PLAYER:setVisible(false)
+
+local squapi = require('scripts.SquAPI')
 
 headmates = {
-	["emily"] = {
-		["name"]        = "Emily",
-		["pronouns"]    = "§bshe§f/§dher",
-		["variant"]     = 1,
-		["variants"]    = { { "casual", ":fox:"}, { "witch", ":witch:" }, { "engineer", ":zap:" } },
-		["icon"]        = "minecraft:pink_tulip",
+	emily = {
+		name        = "Emily",
+		pronouns    = "§bshe§f/§dher",
+		variant     = 1,
+		variants    = { { "casual", ":fox:"}, { "witch", ":witch:" }, { "engineer", ":zap:" } },
+		icon        = "minecraft:pink_tulip",
 	},
-	["chris"] = {
-		["name"]        = "Chris",
-		["pronouns"]    = "§3he§f/§8they",
-		["variant"]     = 1,
-		["variants"]    = { { "hoodie", nil }, { "coat", nil } },
-		["icon"]        = "minecraft:echo_shard",
+	chris = {
+		name        = "Chris",
+		pronouns    = "§3he§f/§8they",
+		variant     = 1,
+		variants    = { { "hoodie", nil }, { "coat", nil } },
+		icon        = "minecraft:echo_shard",
 	},
-	["ash"] = {
-		["name"]        = "ash.",
-		["pronouns"]    = "§8they§f/§4xe",
-		["variant"]     = 1,
-		["variants"]    = { { "emo", nil } },
-		["icon"]        = "minecraft:nether_wart",
+	ash = {
+		name        = "ash.",
+		pronouns    = "§8they§f/§4xe",
+		variant     = 1,
+		variants    = { { "emo", nil } },
+		icon        = "minecraft:nether_wart",
 	},
 }
 
@@ -63,15 +64,20 @@ function makeTog(name, icon, default)
 end
 
 -- Switch Function {{{
-function pings.switch(name, variant)
-	
-	-- Effect
-	particles:removeParticles()
-    sounds:playSound("minecraft:block.lava.extinguish", player:getPos())
-	for i = 0, 64, 1 do
-		particles:newParticle("minecraft:cloud", player:getPos() + vec(math.random(-1, 1), math.random(0, 2), math.random(-1, 1)),
+local currentModel
+
+function pings.switch(name, variant, animate)
+  currentModel = {name, variant}
+ 	 
+ 	 -- Effect
+ 	particles:removeParticles()
+  if animate ~= false then
+ 	  sounds:playSound("minecraft:block.lava.extinguish", player:getPos())
+ 	  for i = 0, 50, 1 do
+ 	 	  particles:newParticle("minecraft:cloud", player:getPos() + vec(math.random(-1, 1), math.random(0, 2), math.random(-1, 1)),
 														vec((math.random() - 0.5) * 0.2, math.random() * 0.2, (math.random() - 0.5) * 0.2)):setPhysics(false):setScale(3)
-	end
+	  end
+  end
 	
 	-- Reset
   swOut()
@@ -164,105 +170,45 @@ events.ENTITY_INIT:register(function()
 										end
 									end)
 	end
--- }}}
 
--- Eyes {{{
-
-	local blinkLength = 3
-	local blinkMinDelay = 80
-	local blinkMaxDelay = 100
-	local eyeHeight = 2
-	
-	local blinking = true
-	local isBlinking = false
-	local blinkFrame = 0
-	local blinkTick = 0
-	
-	events.TICK:register(function()
-	
-		blinkTick = blinkTick + 1
-	
-		if blinking then
-			if isBlinking then
-				if blinkFrame >= blinkLength then
-					isBlinking = false
-					blinkTick = 0
-					blinkFrame = 0
-				else
-					blinkFrame = blinkFrame + 1
-				end
-			elseif (blinkTick >= blinkMinDelay and math.ceil(math.random(blinkMaxDelay - blinkMinDelay)) == blinkMaxDelay - blinkMinDelay)
-							or blinkTick >= blinkMaxDelay then
-				isBlinking = true
-			end
-		end
-	end)
-	
-	events.TICK:register(function()
-		if player:getPose() == "SLEEPING" then
-			blinking = false
-			if blinkFrame <= (blinkLength / 2) then
-				blinkFrame = blinkFrame + 1
-			end
-		else 
-			blinking = true
-		end
-	end)
-	
-	events.RENDER:register(function(delta)
-		local lidPos
-		local blinkPos = blinkFrame + delta
-		local blinkHL = blinkLength / 2
-		
-		if isBlinking then
-			lidPos = math.clamp(math.abs(blinkPos - blinkHL) - blinkHL, -blinkHL, 0) / blinkHL * eyeHeight
-		elseif player:getPose() == "SLEEPING" then
-			lidPos = math.clamp(-blinkPos, -blinkHL, 0) / blinkHL * eyeHeight
-		else
-			lidPos = 0
-		end
-	
-		for headmate, i in pairs(headmates) do
-			for _, variant in pairs(i.variants) do
-				models[headmate][variant[1]].Head.eyelids:setPos(0, lidPos)
-			end
-		end
-	end)
-
--- }}}
-
--- Ears & Tail {{{
-	getVelocity = require("scripts.velocity")
-	ears        = require("scripts.ears")(models.emily.constant.ears.Head.Ears.LeftEar, models.emily.constant.ears.Head.Ears.RightEar)
-	tail        = require("scripts.tail")(models.emily.constant.ears.Body.Tail1)
-
-	ears.config = {
-		default_angle = -5,
-		sneak_angle = 0,
+-- STUFFIES
+	local emiTail = {
+		models.emily.constant.ears.Body.Tail1,
+		models.emily.constant.ears.Body.Tail1.Tail2
 	}
 
-	tail.config = {
-		swim_x_limit = 20,
-	}
-	events.TICK:register(function()
-		local pos  = player:getPos()
-		local pose = player:getPose()
-		if player:getVehicle() then
-					pose = "SIT"
-			end
-		local vel, body_vel, rot_vel, head_vel = getVelocity()
+	squapi.ear(models.emily.constant.ears.head.Ears.LeftEar, models.emily.constant.ears.head.Ears.RightEar, true, 4000000, 0.7, nil, 0.3)
+	squapi.smoothHead(models.emily.constant.ears.head, 1/4)
+	squapi.tails(emiTail, nil, nil, nil, nil, nil, 1.5, nil, 3, nil, nil, nil, 5, 70)
 
-		ears.tick(rot_vel, head_vel)
-		tail.tick(pos, pose, vel, body_vel)
-	end)
 
-	events.RENDER:register(function(delta)
-		ears.render(delta)
-		tail.render(delta)
-	end)
--- }}}
+	for _, v in ipairs(headmates.emily.variants) do
+		local model = models.emily[v[1]] 
+		local anim = animations["emily." .. v[1]]
+		squapi.smoothHead(model.head, 1/4)
+		squapi.bewb(model.Body.booba, true, 0.7)
+		squapi.eye(model.head.Eyes.LeftEye, 0.1, 1.1)
+		squapi.eye(model.head.Eyes.RightEye, 1.1, 0.1)
+		squapi.blink(anim.blink)
+	end
 
--- Final Init
-headmates.emily.action:setToggled(true)
-pings.switch("emily", headmates.emily.variants[1])
+	-- Final Init
+	headmates.emily.action:setToggled(true)
+	pings.switch("emily", headmates.emily.variants[1], false)
 end)
+-- }}}
+
+local players
+
+events.TICK:register(function()
+	if player:getPose() == "CROUCHING" then
+		squapi.wagStrength = 4
+	else
+		squapi.wagStrength = 1
+	end
+  if world:getPlayers() == players then
+    players = world:getPlayers()
+    pings.switch(currentModel[1], currentModel[2], false)
+  end
+end)
+
