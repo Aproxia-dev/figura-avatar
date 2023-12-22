@@ -66,7 +66,7 @@ end
 -- Switch Function {{{
 local currentModel
 
-function pings.switch(name, variant, animate)
+function switch(name, variant, animate)
   currentModel = {name, variant}
  	 
  	 -- Effect
@@ -130,46 +130,51 @@ function pings.switch(name, variant, animate)
 	toggleables = {}
 	pcall(function() require(name .. "." .. variant[1])() end)
 end
+
+pings.switch = switch
 -- }}}
 
 -- Headmate Init {{{
-events.ENTITY_INIT:register(function()
-	for headmate, hInfo in pairs(headmates) do
+for headmate, hInfo in pairs(headmates) do
 		hInfo.page   = action_wheel :newPage()
-    if #hInfo.variants > 1 then
-	
-		  hInfo.switch = hInfo.page   :newAction()
-		  							:setItem("minecraft:lever")
-		  							:setTitle(string.format("Switch to %s", hInfo.variants[hInfo.variant + 1][1]:gsub("^%l", string.upper)))
-		  							:onLeftClick(function()
-		  								hInfo.variant = hInfo.variant + 1 <= #hInfo.variants and hInfo.variant + 1 or 1
-		  								hInfo.switch:setTitle(string.format("Switch to %s", hInfo.variants[hInfo.variant + 1 <= #hInfo.variants and hInfo.variant + 1 or 1][1]:gsub("^%l", string.upper)))
-		  								pings.switch(headmate, hInfo.variants[hInfo.variant])
-		  							end)
-    end
-		hInfo.page	:newAction()
-					:setItem("minecraft:command_block")
-					:setTitle("Toggleables")
-					:onLeftClick(function()
-						action_wheel:setPage(togglePage)
-					end)
-				
-		hInfo.action = switchWheel  :newAction()
-									:setItem(hInfo.icon)
-									:setTitle(hInfo.name)
-									:onLeftClick(function()
-										if hInfo.action:isToggled() == false then
-											for _, h in pairs(headmates) do
-												h.action:setToggled(false)
-											end
-											hInfo.action:setToggled(true)
-											pings.switch(headmate, hInfo.variants[hInfo.variant])
-											action_wheel:setPage(hInfo.page)
-										else
-											action_wheel:setPage(hInfo.page)
-										end
-									end)
+	if #hInfo.variants > 1 then
+
+		hInfo.switch = hInfo.page	:newAction()
+	  								:setItem("minecraft:lever")
+	  								:setTitle(string.format("Switch to %s", hInfo.variants[hInfo.variant + 1][1]:gsub("^%l", string.upper)))
+	  								:onLeftClick(function()
+	  									hInfo.variant = hInfo.variant + 1 <= #hInfo.variants and hInfo.variant + 1 or 1
+	  									hInfo.switch:setTitle(string.format("Switch to %s", hInfo.variants[hInfo.variant + 1 <= #hInfo.variants and hInfo.variant + 1 or 1][1]:gsub("^%l", string.upper)))
+	  									pings.switch(headmate, hInfo.variants[hInfo.variant])
+	  								end)
 	end
+	hInfo.page	:newAction()
+				:setItem("minecraft:command_block")
+				:setTitle("Toggleables")
+				:onLeftClick(function()
+					action_wheel:setPage(togglePage)
+				end)
+			
+	hInfo.action = switchWheel  :newAction()
+								:setItem(hInfo.icon)
+								:setTitle(hInfo.name)
+								:onLeftClick(function()
+									if hInfo.action:isToggled() == false then
+										for _, h in pairs(headmates) do
+											h.action:setToggled(false)
+										end
+										hInfo.action:setToggled(true)
+										pings.switch(headmate, hInfo.variants[hInfo.variant])
+										action_wheel:setPage(hInfo.page)
+									else
+										action_wheel:setPage(hInfo.page)
+									end
+								end)
+end
+headmates.emily.action:setToggled(true)
+pings.switch("emily", headmates.emily.variants[1], false)
+
+events.ENTITY_INIT:register(function()
 
 -- STUFFIES
 	local emiTail = {
@@ -177,7 +182,7 @@ events.ENTITY_INIT:register(function()
 		models.emily.constant.ears.Body.Tail1.Tail2
 	}
 
-	squapi.ear(models.emily.constant.ears.head.Ears.LeftEar, models.emily.constant.ears.head.Ears.RightEar, true, 4000000, 0.7, nil, 0.3)
+	squapi.ear(models.emily.constant.ears.head.Ears.LeftEar, models.emily.constant.ears.head.Ears.RightEar, true, 4000000, 0.4, nil, 0.3)
 	squapi.smoothHead(models.emily.constant.ears.head, 1/4)
 	squapi.tails(emiTail, nil, nil, nil, nil, nil, 1.5, nil, 3, nil, nil, nil, 5, 70)
 
@@ -192,9 +197,7 @@ events.ENTITY_INIT:register(function()
 		squapi.blink(anim.blink)
 	end
 
-	-- Final Init
-	headmates.emily.action:setToggled(true)
-	pings.switch("emily", headmates.emily.variants[1], false)
+    switch(currentModel[1], currentModel[2], false)
 end)
 -- }}}
 
@@ -206,9 +209,5 @@ events.TICK:register(function()
 	else
 		squapi.wagStrength = 1
 	end
-  if world:getPlayers() == players then
-    players = world:getPlayers()
-    pings.switch(currentModel[1], currentModel[2], false)
-  end
 end)
 
