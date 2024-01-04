@@ -190,10 +190,10 @@ events.ENTITY_INIT:register(function()
 	for _, v in ipairs(headmates.emily.variants) do
 		local model = models.emily[v[1]] 
 		local anim = animations["emily." .. v[1]]
-		squapi.smoothHead(model.head, 1/4)
-		squapi.bewb(model.Body.booba, true, 0.7)
-		squapi.eye(model.head.Eyes.LeftEye, 0.1, 1.1)
-		squapi.eye(model.head.Eyes.RightEye, 1.1, 0.1)
+		squapi.smoothHead(model.root.AboveWaist.head, 1/4)
+		squapi.bewb(model.root.AboveWaist.Body.booba, true, 0.7)
+		squapi.eye(model.root.AboveWaist.head.Eyes.Pupils.LeftPupil, 0.1, 1.1)
+		squapi.eye(model.root.AboveWaist.head.Eyes.Pupils.RightPupil, 1.1, 0.1)
 		squapi.blink(anim.blink)
 	end
 
