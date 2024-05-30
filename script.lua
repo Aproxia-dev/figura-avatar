@@ -5,7 +5,7 @@ local squapi = require('scripts.SquAPI')
 headmates = {
 	emily = {
 		name        = "Emily",
-		pronouns    = "§bshe§f/§dher",
+		pronouns    = "§dshe§f/§cthey",
 		variant     = 1,
 		variants    = { { "casual", ":fox:"}, { "witch", ":witch:" }, { "engineer", ":zap:" } },
 		icon        = "minecraft:pink_tulip",
@@ -27,12 +27,12 @@ headmates = {
 }
 
 if tonumber(client.getVersion():sub(
-  client.getVersion():find('.', 1, true) + 1,
-  client.getVersion():find('.', 3, true) - 1
+	client.getVersion():find('.', 1, true) + 1,
+	client.getVersion():find('.', 3, true) - 1
 )) > 18 then
-  headmates.chris.icon = "minecraft:echo_shard"
+	headmates.chris.icon = "minecraft:echo_shard"
 else
-  headmates.chris.icon = "minecraft:soul_lantern"
+	headmates.chris.icon = "minecraft:soul_lantern"
 end
 
 switchWheel = action_wheel:newPage()
@@ -41,46 +41,30 @@ action_wheel.rightClick = function()
 		action_wheel:setPage(switchWheel)
 end
 
-function pings.toggle(model, bool)
-	toggleables[model]:setVisible(bool)
-end
-
-swOut = function() end
-disableOnSwitch = {}
-toggleables = {}
-
-function makeTog(name, icon, default)
-	yeah = togglePage	:newAction()
-						:setItem(icon)
-						:setTitle("Enable " .. name)
-						:setToggleTitle("Disable " .. name)
-						:setToggled(default)
-						:onLeftClick(function()
-							yeah:setToggled(not yeah:isToggled())
-							pings.toggle(name, yeah:isToggled())
-						end)
-	
-	pings.toggle(name, default)
-end
-
 -- Switch Function {{{
 local currentModel
 
+local modelInfo = {
+	toggleables = {},
+	disableOnSwitch = {},
+	swOut = function() end,
+}
+
 function switch(name, variant, animate)
-  currentModel = {name, variant}
- 	 
- 	 -- Effect
- 	particles:removeParticles()
-  if animate ~= false then
- 	  sounds:playSound("minecraft:block.lava.extinguish", player:getPos())
- 	  for i = 0, 50, 1 do
- 	 	  particles:newParticle("minecraft:cloud", player:getPos() + vec(math.random(-1, 1), math.random(0, 2), math.random(-1, 1)),
-														vec((math.random() - 0.5) * 0.2, math.random() * 0.2, (math.random() - 0.5) * 0.2)):setPhysics(false):setScale(3)
-	  end
-  end
+	currentModel = {name, variant, {} }
+
+	-- Effect
+	particles:removeParticles()
+	if animate ~= false then
+	sounds:playSound("minecraft:block.lava.extinguish", player:getPos())
+	for i = 0, 50, 1 do
+		particles:newParticle("minecraft:cloud", player:getPos() + vec(math.random(-1, 1), math.random(0, 2), math.random(-1, 1)),
+												 vec((math.random() - 0.5) * 0.2, math.random() * 0.2, (math.random() - 0.5) * 0.2)):setPhysics(false):setScale(3)
+		end
+	end
 	
 	-- Reset
-  swOut()
+	modelInfo.swOut()
 	for n, h in pairs(headmates) do
 		models[n]:setVisible(false)
 		events.TICK:remove(n)
@@ -88,7 +72,6 @@ function switch(name, variant, animate)
 			models[n].constant:setVisible(false)
 		end
 		for _, var in pairs(h.variants) do
-			-- log(n .. "_" .. var[1])
 			events.TICK:remove(n .. "_" .. var[1])
 			models[n][var[1]]:setVisible(false)
 		end
@@ -122,16 +105,51 @@ function switch(name, variant, animate)
 	end
 
 	-- Reset toggleables and import scripts
-	for _, part in pairs(disableOnSwitch) do
+	for _, part in pairs(modelInfo.disableOnSwitch) do
 		part:setVisible(false)
 	end
 	togglePage = action_wheel:newPage()
-	disableOnSwitch = {}
-	toggleables = {}
-	pcall(function() require(name .. "." .. variant[1])() end)
+	local modelScript
+	modelScript, modelInfo = pcall(function() return require(name .. "." .. variant[1])() end)
+	if modelScript == false or modelInfo == nil then
+		modelInfo = {
+			toggleables = {},
+			disableOnSwitch = {},
+			swOut = function() end,
+		}
+	end
 end
 
 pings.switch = switch
+-- }}}
+
+-- Toggle Function {{{
+
+function toggle(model, bool)
+	if bool then
+		currentModel[3][model] = modelInfo.toggleables[model]
+	else
+		currentModel[3][model] = nil
+	end
+	modelInfo.toggleables[model]:setVisible(bool)
+end
+
+pings.toggle = toggle
+
+function makeTog(name, icon, default)
+	yeah = togglePage	:newAction()
+						:setItem(icon)
+						:setTitle("Enable " .. name)
+						:setToggleTitle("Disable " .. name)
+						:setToggled(default)
+						:onLeftClick(function()
+							yeah:setToggled(not yeah:isToggled())
+							pings.toggle(name, yeah:isToggled())
+						end)
+	
+	pings.toggle(name, default)
+end
+
 -- }}}
 
 -- Headmate Init {{{
@@ -140,13 +158,13 @@ for headmate, hInfo in pairs(headmates) do
 	if #hInfo.variants > 1 then
 
 		hInfo.switch = hInfo.page	:newAction()
-	  								:setItem("minecraft:lever")
-	  								:setTitle(string.format("Switch to %s", hInfo.variants[hInfo.variant + 1][1]:gsub("^%l", string.upper)))
-	  								:onLeftClick(function()
-	  									hInfo.variant = hInfo.variant + 1 <= #hInfo.variants and hInfo.variant + 1 or 1
-	  									hInfo.switch:setTitle(string.format("Switch to %s", hInfo.variants[hInfo.variant + 1 <= #hInfo.variants and hInfo.variant + 1 or 1][1]:gsub("^%l", string.upper)))
-	  									pings.switch(headmate, hInfo.variants[hInfo.variant])
-	  								end)
+									:setItem("minecraft:lever")
+									:setTitle(string.format("Switch to %s", hInfo.variants[hInfo.variant + 1][1]:gsub("^%l", string.upper)))
+									:onLeftClick(function()
+										hInfo.variant = hInfo.variant + 1 <= #hInfo.variants and hInfo.variant + 1 or 1
+										hInfo.switch:setTitle(string.format("Switch to %s", hInfo.variants[hInfo.variant + 1 <= #hInfo.variants and hInfo.variant + 1 or 1][1]:gsub("^%l", string.upper)))
+										pings.switch(headmate, hInfo.variants[hInfo.variant])
+									end)
 	end
 	hInfo.page	:newAction()
 				:setItem("minecraft:command_block")
@@ -172,7 +190,7 @@ for headmate, hInfo in pairs(headmates) do
 								end)
 end
 headmates.emily.action:setToggled(true)
-pings.switch("emily", headmates.emily.variants[1], false)
+currentModel = { "emily", headmates.emily.variants[1] }
 
 events.ENTITY_INIT:register(function()
 
@@ -181,6 +199,8 @@ events.ENTITY_INIT:register(function()
 		models.emily.constant.ears.Body.Tail1,
 		models.emily.constant.ears.Body.Tail1.Tail2
 	}
+
+	animations["emily.constant.ears"].raiseTail:play()
 
 	squapi.ear(models.emily.constant.ears.head.Ears.LeftEar, models.emily.constant.ears.head.Ears.RightEar, true, 4000000, 0.4, nil, 0.3)
 	squapi.smoothHead(models.emily.constant.ears.head, 1/4)
@@ -197,7 +217,10 @@ events.ENTITY_INIT:register(function()
 		squapi.blink(anim.blink)
 	end
 
-    switch(currentModel[1], currentModel[2], false)
+	switch(currentModel[1], currentModel[2], false)
+	for k, _ in pairs(currentModel[3]) do
+		toggle(k, true)
+	end
 end)
 -- }}}
 
@@ -205,9 +228,11 @@ local players
 
 events.TICK:register(function()
 	if player:getPose() == "CROUCHING" then
-		squapi.wagStrength = 4
+		squapi.wagStrength = 6
+		animations["emily.constant.ears"].raiseTail:setSpeed(1)
 	else
 		squapi.wagStrength = 1
+		animations["emily.constant.ears"].raiseTail:setSpeed(-1)
 	end
 end)
 
