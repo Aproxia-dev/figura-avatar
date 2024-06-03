@@ -3,8 +3,8 @@ vanilla_model.PLAYER:setVisible(false)
 local squapi = require('scripts.SquAPI')
 
 headmates = {
-    emily = {
-        name        = "Emily",
+    emi = {
+        name        = "Emi",
         pronouns    = "§dshe§f/§cthey",
         variant     = 1,
         variants    = { { "casual", ":fox:"}, { "witch", ":witch:" }, { "engineer", ":zap:" } },
@@ -198,8 +198,8 @@ for headmate, hInfo in pairs(headmates) do
                                     end
                                 end)
 end
-headmates.emily.action:setToggled(true)
-currentModel = { "emily", 1 }
+headmates.emi.action:setToggled(true)
+currentModel = { "Emi", 1 }
 
 events.ENTITY_INIT:register(function()
 
@@ -207,20 +207,20 @@ events.ENTITY_INIT:register(function()
 
 -- STUFFIES
     local emiTail = {
-        models.emily.constant.ears.Body.Tail1,
-        models.emily.constant.ears.Body.Tail1.Tail2
+        models.emi.constant.ears.Body.Tail1,
+        models.emi.constant.ears.Body.Tail1.Tail2
     }
 
-    animations["emily.constant.ears"].raiseTail:play()
+    animations["emi.constant.ears"].raiseTail:play()
 
-    squapi.ear(models.emily.constant.ears.head.Ears.LeftEar, models.emily.constant.ears.head.Ears.RightEar, true, 4000000, 0.4, nil, 0.3)
-    squapi.smoothHead(models.emily.constant.ears.head, 1/4)
+    squapi.ear(models.emi.constant.ears.head.Ears.LeftEar, models.emi.constant.ears.head.Ears.RightEar, true, 4000000, 0.4, nil, 0.3)
+    squapi.smoothHead(models.emi.constant.ears.head, 1/4)
     squapi.tails(emiTail, nil, nil, nil, nil, nil, 1.5, nil, 3, nil, nil, nil, 5, 70)
 
 
-    for _, v in ipairs(headmates.emily.variants) do
-        local model = models.emily[v[1]] 
-        local anim = animations["emily." .. v[1]]
+    for _, v in ipairs(headmates.emi.variants) do
+        local model = models.emi[v[1]] 
+        local anim = animations["emi." .. v[1]]
         squapi.smoothHead(model.root.AboveWaist.head, 1/4)
         squapi.bewb(model.root.AboveWaist.Body.booba, true, 0.7)
         squapi.eye(model.root.AboveWaist.head.Eyes.Pupils.LeftPupil, 0.1, 1.1)
@@ -247,10 +247,10 @@ events.TICK:register(function()
 
     if player:getPose() == "CROUCHING" then
         squapi.wagStrength = 6
-        animations["emily.constant.ears"].raiseTail:setSpeed(1)
+        animations["emi.constant.ears"].raiseTail:setSpeed(1)
     else
         squapi.wagStrength = 1
-        animations["emily.constant.ears"].raiseTail:setSpeed(-1)
+        animations["emi.constant.ears"].raiseTail:setSpeed(-1)
     end
 end)
 

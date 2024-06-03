@@ -1,20 +1,20 @@
 return function()
     local ret = { 
         toggleables = {
-            ["Bunny"] = models.emily.witch.root.AboveWaist.Body.Bunny,
+            ["Bunny"] = models.emi.witch.root.AboveWaist.Body.Bunny,
         },
         disableOnSwitch = {
-            models.emily.witch.root.AboveWaist.Body.booba,
-            models.emily.witch.root.AboveWaist.Body.Bunny,
+            models.emi.witch.root.AboveWaist.Body.booba,
+            models.emi.witch.root.AboveWaist.Body.Bunny,
         },
         swOut = function()
             vanilla_model.HELMET:setVisible(true)
-            animations["emily.constant.ears"].witch:stop()
+            animations["emi.constant.ears"].witch:stop()
         end
     }
 
     nameplate.ENTITY:setPos(0, 0.3, 0)
-    animations["emily.constant.ears"].witch:play()
+    animations["emi.constant.ears"].witch:play()
 
     makeTog(
         "Bunny",
@@ -26,20 +26,20 @@ return function()
 
     events.TICK:register(function()
         bunnyRot = player:getRot() * vec(-0.33, -1)
-        models.emily.witch.root.AboveWaist.Body.Bunny:setOffsetRot(bunnyRot.x, bunnyRot.y % 360 + player:getBodyYaw(), nil)
+        models.emi.witch.root.AboveWaist.Body.Bunny:setOffsetRot(bunnyRot.x, bunnyRot.y % 360 + player:getBodyYaw(), nil)
         
         if player:getPose() == "CROUCHING" then
-            models.emily.witch.root.AboveWaist.Body.Bunny:setRot(22.5, 0, 0)
+            models.emi.witch.root.AboveWaist.Body.Bunny:setRot(22.5, 0, 0)
         else
-            models.emily.witch.root.AboveWaist.Body.Bunny:setRot(0, 0, 0)
+            models.emi.witch.root.AboveWaist.Body.Bunny:setRot(0, 0, 0)
         end
 
         if player:getItem(5):getCount() > 0 then
-            models.emily.witch.root.AboveWaist.Body.booba:setVisible(false)
+            models.emi.witch.root.AboveWaist.Body.booba:setVisible(false)
         else
-            models.emily.witch.root.AboveWaist.Body.booba:setVisible(true)
+            models.emi.witch.root.AboveWaist.Body.booba:setVisible(true)
         end
-    end, "emily_witch")
+    end, "emi_witch")
 
     return ret
 end
