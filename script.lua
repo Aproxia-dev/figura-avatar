@@ -37,9 +37,6 @@ end
 
 switchWheel = action_wheel:newPage()
 action_wheel:setPage(switchWheel)
-action_wheel.rightClick = function()
-        action_wheel:setPage(switchWheel)
-end
 
 -- Switch Function {{{
 local currentModel
@@ -49,6 +46,65 @@ local modelInfo = {
     disableOnSwitch = {},
     swOut = function() end,
 }
+
+function updateNameplate(name, variant)
+    -- Change Nameplate
+    nameplate.ENTITY:setPos(0, 0, 0)
+    varIcon = headmates[name].variants[variant][2]
+    if varIcon == nil then
+        nameplate.ALL:setText(headmates[name].name)
+        nameplate.ENTITY:setText(toJson({
+            { text = "\n" },
+            { text = table.concat({headmates[name].name, "${badges}"}, " ") },
+            { text = "\n" },
+            { text = "§7(" .. headmates[name].pronouns .. "§7)" }
+        }))
+    else
+        nameplate.LIST:setText(headmates[name].name .. " " .. varIcon)
+        nameplate.CHAT:setText(headmates[name].name)
+        nameplate.ENTITY:setText(toJson({
+            { text = "\n" },
+            { text = table.concat({varIcon, headmates[name].name, "${badges}"}, " ") },
+            { text = "\n" },
+            { text = "§7(" .. headmates[name].pronouns .. "§7)" }
+        }))
+    end
+end
+
+pings.updateNameplate = updateNameplate
+
+-- Toggle Function {{{
+
+function toggle(index, bool)
+    if bool then
+        currentModel[3][index] = true
+    else
+        currentModel[3][index] = nil
+    end
+    local part = modelInfo.toggleables[index].part
+    if init then
+        part:setVisible(bool)
+    end
+end
+
+pings.toggle = toggle
+
+-- }}}
+
+-- Emote Function {{{
+
+pings.playAnim = function(index)
+    local variantName = table.concat({currentModel[1], headmates[currentModel[1]].variants[currentModel[2]][1]}, ".")
+    local animation = modelInfo.emotes[index].anim
+    for _, v in pairs(models[currentModel[1]]["constant"]:getChildren()) do
+        if animations[table.concat({currentModel[1], "constant", v:getName()}, ".")][animation] then
+            animations[table.concat({currentModel[1], "constant", v:getName()}, ".")][animation]:restart()
+        end
+    end
+    animations[variantName][animation]:restart()
+end
+
+-- }}}
 
 function switch(name, variant, animate)
     currentModel = {name, variant, {} }
@@ -87,91 +143,99 @@ function switch(name, variant, animate)
             models[name].constant:setVisible(true)
         end
 
-        -- Reset toggleables and import scripts
+        -- Reset toggleables
         for _, part in pairs(modelInfo.disableOnSwitch) do
             part:setVisible(false)
         end
-        togglePage = action_wheel:newPage()
 
+
+        -- Import scripts
         local modelScript
         modelScript, modelInfo = pcall(function() return require(name .. "." .. variantName)() end)
         if modelScript == false or modelInfo == nil then
             modelInfo = {
                 toggleables = {},
+                emotes = {},
                 disableOnSwitch = {},
                 swOut = function() end,
             }
         end
+
+        -- Import toggleables and emotes
+        togglePage = action_wheel:newPage()
+        for k, v in pairs(modelInfo.toggleables) do
+            local toggleAction = togglePage	:newAction()
+                                            :setItem(v.icon)
+                                            :setTitle("Enable " .. v.name)
+                                            :setToggleTitle("Disable " .. v.name)
+                                            :setToggled(v.default)
+            toggleAction:onLeftClick(function()
+                toggleAction:setToggled(not toggleAction:isToggled())
+                pings.toggle(k, toggleAction:isToggled())
+            end)
+
+            pings.toggle(k, default)
+        end
+        togglePage  :newAction()
+                    :setItem("minecraft:arrow")
+                    :setTitle("Back")
+                    :onLeftClick(function()
+                        action_wheel:setPage(headmates[name].page)
+                    end)
+
+
+        emotePage = action_wheel:newPage()
+        for k, v in pairs(modelInfo.emotes) do
+            local emoteAction = emotePage	:newAction()
+                                            :setItem(v.icon)
+                                            :setTitle(v.name)
+            emoteAction :onLeftClick(function()
+                pings.playAnim(k)
+            end)
+        end
+        emotePage   :newAction()
+                    :setItem("minecraft:arrow")
+                    :setTitle("Back")
+                    :onLeftClick(function()
+                        action_wheel:setPage(headmates[name].page)
+                    end)
     end
 
-    -- Change Nameplate
-    nameplate.ENTITY:setPos(0, 0, 0)
-    varIcon = headmates[name].variants[variant][2]
-    if varIcon == nil then
-        nameplate.ALL:setText(headmates[name].name)
-        nameplate.ENTITY:setText(toJson({
-            { text = "\n" },
-            { text = table.concat({headmates[name].name, "${badges}"}, " ") },
-            { text = "\n" },
-            { text = "§7(" .. headmates[name].pronouns .. "§7)" }
-        }))
-    else
-        nameplate.LIST:setText(headmates[name].name .. " " .. varIcon)
-        nameplate.CHAT:setText(headmates[name].name)
-        nameplate.ENTITY:setText(toJson({
-            { text = "\n" },
-            { text = table.concat({varIcon, headmates[name].name, "${badges}"}, " ") },
-            { text = "\n" },
-            { text = "§7(" .. headmates[name].pronouns .. "§7)" }
-        }))
-    end
+    updateNameplate(name, variant)
 end
 
 pings.switch = switch
 -- }}}
 
--- Toggle Function {{{
-
-function toggle(model, bool)
-    if bool then
-        currentModel[3][model] = modelInfo.toggleables[model]
-    else
-        currentModel[3][model] = nil
-    end
-    if init then
-        modelInfo.toggleables[model]:setVisible(bool)
-    end
-end
-
-pings.toggle = toggle
-
-function makeTog(name, icon, default)
-    yeah = togglePage	:newAction()
-                        :setItem(icon)
-                        :setTitle("Enable " .. name)
-                        :setToggleTitle("Disable " .. name)
-                        :setToggled(default)
-                        :onLeftClick(function()
-                            yeah:setToggled(not yeah:isToggled())
-                            pings.toggle(name, yeah:isToggled())
-                        end)
-    
-    pings.toggle(name, default)
-end
-
--- }}}
-
 -- Headmate Init {{{
+
+local cycle = function(index, steps, len)
+    return ((index - 1 + steps) % len + len) % len + 1 
+end
+
+local makeSwitchText = function(meta)
+    return string.format(
+        "Switch Variant\n§7LMB - %s, RMB - %s",
+        meta.variants[cycle(meta.variant,  1, #meta.variants)][1]:gsub("^%l", string.upper),
+        meta.variants[cycle(meta.variant, -1, #meta.variants)][1]:gsub("^%l", string.upper)
+    )
+end
+
 for headmate, hInfo in pairs(headmates) do
         hInfo.page   = action_wheel :newPage()
     if #hInfo.variants > 1 then
 
         hInfo.switch = hInfo.page	:newAction()
                                     :setItem("minecraft:lever")
-                                    :setTitle(string.format("Switch to %s", hInfo.variants[hInfo.variant + 1][1]:gsub("^%l", string.upper)))
+                                    :setTitle(makeSwitchText(hInfo))
                                     :onLeftClick(function()
-                                        hInfo.variant = hInfo.variant + 1 <= #hInfo.variants and hInfo.variant + 1 or 1
-                                        hInfo.switch:setTitle(string.format("Switch to %s", hInfo.variants[hInfo.variant + 1 <= #hInfo.variants and hInfo.variant + 1 or 1][1]:gsub("^%l", string.upper)))
+                                        hInfo.variant = cycle(hInfo.variant,  1, #hInfo.variants)
+                                        hInfo.switch:setTitle(makeSwitchText(hInfo))
+                                        pings.switch(headmate, hInfo.variant)
+                                    end)
+                                    :onRightClick(function()
+                                        hInfo.variant = cycle(hInfo.variant, -1, #hInfo.variants)
+                                        hInfo.switch:setTitle(makeSwitchText(hInfo))
                                         pings.switch(headmate, hInfo.variant)
                                     end)
     end
@@ -180,6 +244,20 @@ for headmate, hInfo in pairs(headmates) do
                 :setTitle("Toggleables")
                 :onLeftClick(function()
                     action_wheel:setPage(togglePage)
+                end)
+    
+    hInfo.page  :newAction()
+                :setItem("player_head{SkullOwner:Aproxia}")
+                :setTitle("Emotes")
+                :onLeftClick(function()
+                    action_wheel:setPage(emotePage)
+                end)
+
+    hInfo.page  :newAction()
+                :setItem("minecraft:arrow")
+                :setTitle("Back")
+                :onLeftClick(function()
+                    action_wheel:setPage(switchWheel)
                 end)
             
     hInfo.action = switchWheel  :newAction()
@@ -199,7 +277,7 @@ for headmate, hInfo in pairs(headmates) do
                                 end)
 end
 headmates.emi.action:setToggled(true)
-currentModel = { "Emi", 1 }
+currentModel = { "emi", 1 }
 
 events.ENTITY_INIT:register(function()
 
@@ -207,14 +285,14 @@ events.ENTITY_INIT:register(function()
 
 -- STUFFIES
     local emiTail = {
-        models.emi.constant.ears.Body.Tail1,
-        models.emi.constant.ears.Body.Tail1.Tail2
+        models.emi.constant.ears.root.AboveWaist.Body.Tail1,
+        models.emi.constant.ears.root.AboveWaist.Body.Tail1.Tail2
     }
 
     animations["emi.constant.ears"].raiseTail:play()
 
-    squapi.ear(models.emi.constant.ears.head.Ears.LeftEar, models.emi.constant.ears.head.Ears.RightEar, true, 4000000, 0.4, nil, 0.3)
-    squapi.smoothHead(models.emi.constant.ears.head, 1/4)
+    squapi.ear(models.emi.constant.ears.root.AboveWaist.head.Ears.LeftEar, models.emi.constant.ears.root.AboveWaist.head.Ears.RightEar, true, 4000000, 0.4, nil, 0.3)
+    squapi.smoothHead(models.emi.constant.ears.root.AboveWaist.head, 1/4)
     squapi.tails(emiTail, nil, nil, nil, nil, nil, 1.5, nil, 3, nil, nil, nil, 5, 70)
 
 
@@ -241,7 +319,7 @@ events.TICK:register(function()
     tick_counter = tick_counter + 1
 
     if tick_counter > 5 * 20 then -- 5 seconds
-            pings.switch(currentModel[1], currentModel[2], false)
+            pings.updateNameplate(currentModel[1], currentModel[2])
             tick_counter = 0
     end
 
