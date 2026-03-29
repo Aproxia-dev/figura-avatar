@@ -331,4 +331,3 @@ events.TICK:register(function()
         animations["emi.constant.ears"].raiseTail:setSpeed(-1)
     end
 end)
-

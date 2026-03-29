@@ -270,7 +270,7 @@ function squapi.smoothTorso(element, strengthMultiplier, tilt)
 		squapi.torsoOffset = mainbodyrot
 
 		-- Better Combat SquAPI Compatibility created by @jimmyhelp and @foxy2526 on Discord
-		if renderer:isFirstPerson() and context == "RENDER" then
+		if renderer:isFirstPerson() and (context == "RENDER" or context == "OTHER") then
 			element:setVisible(false)
 			-- Set path to head model
 		else
@@ -309,7 +309,7 @@ function squapi.smoothHead(element, tilt, strength, keeporiginalheadpos)
 		end
 		
 		-- Better Combat SquAPI Compatibility created by @jimmyhelp and @foxy2526 on Discord
-		if renderer:isFirstPerson() and context == "RENDER" then
+		if renderer:isFirstPerson() and context == "OTHER" then
 			element:setVisible(false)
 			-- Set path to head model
 		else
